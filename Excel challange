@@ -1,0 +1,92 @@
+#import required  libraries
+
+import pandas as pd
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+
+# Import the file 
+df = pd.read_excel("F:/python_Csv/Sql/Runners Up but Never Won Top 2.xlsx")
+df.head()
+
+
+#we don't need the excepected  answer columns so exclude it
+df = df[["Year","Winners","Runners-up"]]
+df.head()
+
+
+# unstack the data for that need to copy the data
+df1 = df.copy()
+
+# stack the data
+df2 = pd.concat([df,df1],ignore_index = True)
+df2.tail()
+
+# Need to creat the yearchar column for year 
+
+df['yearchar'] = df['Year'].astype(str)
+df1['yearchar'] = df1['Year'].astype(str)
+
+df3 = df[['Year','Winners','yearchar']]
+df4 = df1[['Year','Runners-up','yearchar']]
+
+df4.info()
+
+# for stack the data we need to give same columns names for rowbinding
+
+df4.rename(columns = {'Runners-up':'Winners'},inplace = True)
+df4
+
+#Row bind or append the data
+
+df2 = df3.append(df4,ignore_index=True)
+df2
+
+
+#Need to create a new lead column for further analysis
+
+#firstly need to group the data team and yearwise
+
+dff = df2.groupby(['Winners','Year']).size().reset_index().sort_values(by=['Winners','Year'], ascending = True)
+
+
+#Need to create the lead year column
+dff['Lead_yr'] = dff.groupby(['Winners'])['Year'].shift(-1)
+
+#After that need to create  year gap col
+dff['yr_gap'] = dff['Lead_yr''] - dff['Year']
+
+# To convert / change the dtype of column first need to fill the nan values
+dff['Lead_yr'] = dff['Lead_yr'].fillna(0)
+dff['Lead_yr'] = dff['Lead_yr'].astype(int)
+
+#again need to change the dtype why because it helps to concat the year and lead yr columm (if don't change the type it throughs an error)
+
+dff['Lead_yr'] = dff['Lead_yr'].astype(str)
+dff['Lead_yr'] = dff['Lead_yr'].replace('0', np.nan)
+
+dff.info()
+dff
+
+#Concatinate the yr and lead yr columns
+dff =  dff.astype({'Year':'str','yt':'str'})
+
+dff['years'] = dff['Year'] + '-' + dff['Lead_yr']
+dff
+
+#need to drop the na values form the year conctinate columns
+dff.dropna(inplace = True)
+dff
+
+#finally need to get max gap year from the data
+result = dff.groupby(['Winners'],as_index = False).max()[['Winners','Year','Lead_yr','yr_gap','years']]
+result
+
+
+
+
+
+
+
+
